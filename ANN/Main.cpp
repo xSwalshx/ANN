@@ -20,42 +20,32 @@ int main()
 	std::string mazeFileLoc = openFile(0);
 	
   std::cout << "Chosen File Location : " << mazeFileLoc.c_str() << "\n";
-
+  
 	//OPEN THE FILE IN BINARY
-	//STORE THE FIRST CHARACTER AS AN INT VALUE
-	//CLOSE THE FILE
   std::fstream mazeFile(mazeFileLoc, std::ios::in | std::ios::binary);
 
   if (mazeFile.is_open())
   {
+	  //STORE THE FIRST CHARACTER AS AN CHAR VALUE
     char test = mazeFile.get();
     std::cout << "First Character is : " << test << std::endl;
     
+    //PUT THE CHAR VALUE IN A STRING
     std::string strTest;
     strTest.insert(strTest.begin(), test);
     std::cout << "String First Character is : " << strTest << std::endl;
-    
-    int testIntVal = std::stoi(strTest, nullptr, strTest.size());
+
+    //USE STOI TO GET THE INT VALUE OF STRING
+    int testIntVal = std::stoi(strTest);
     std::cout << "Int Value of first character is : " << testIntVal << std::endl;
 
     mazeFile.close();
   }
 
-
-
-
 	//IF STATEMENTS THAT CHECK WHICH FILE ENCODING TYPE HAS BEEN USED FOR THE TEXT FILE 
 	//CHECK FOR UTF-16
 	//ELSE
 	//OPEN AS UTF-8 & ANSI
-	/*if (0)
-	{
-
-	}
-	else
-	{
-
-	}*/
 
 	/*
 	//OPEN AND READ THE MAZE FILE
