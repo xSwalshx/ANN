@@ -98,17 +98,17 @@ int main()
   {
     while (std::getline(maze, line))
     {
+      //GET THE Y VALUE
+      strY = line.substr(0, 1);
+      if (testing == true) { std::cout << "String Value of Y : " << strY << std::endl; }
+      y = std::stoi(strY, 0);
+      if (testing == true) { std::cout << "Int value of Y : " << y << std::endl; }
+      
       //GET THE X VALUE
-      strX = line.substr(0, 1);
+      strX = line.substr(1, 2);
       if (testing == true) { std::cout << "String Value of X : " << strX << std::endl; }
       x = std::stoi(strX, 0);
       if (testing == true) { std::cout << "Int value of X : " << x << std::endl; }
-      
-      //GET THE Y VALUE
-      strY = line.substr(1, 2);
-      if (testing == true) { std::cout << "String Value of Y : " << strX << std::endl; }
-      y = std::stoi(strY, 0);
-      if (testing == true) { std::cout << "Int value of Y : " << y << std::endl; }
     }
     maze.close();
   }
@@ -123,16 +123,34 @@ int main()
   int count = 3; //START AT THE FIRST PART OF THE ACTUAL MAZE
 
   //NESTED FOR LOOP TO GO THROUGHT THE MAZE AND PUT IT IN THE 2D ARRAY
-  for (int i = 0; i <= x; i++)
+  for (int i = 0; i < y; i++) //FOR LOOP TO GO THROUGH Y AXIS
   {
-    count += 1;
     std::cout << "//--------------------------------------//" << std::endl;
-    for (int j = 0; j <= y; j++)
+    for (int j = 0; j < x; j++) //FOR LOOP TO GO THROUGH THE X AXIS
     {
-      std::string pos = line.substr(count, count += 1);
-      int value = std::stoi(pos, 0);
+      std::string pos = line.substr(count,1);
+      std::remove_if(pos.begin(), pos.end(), isspace);
+
+      //IF THERE IS A SPACE THEN SKIP IT AND ADD TO COUNT
+      if (pos == " ") 
+      {
+        count++;
+        j--; //SO WE DON'T MISS A MEMBER IN THE ARRAY GO BACK BY 1 ON j
+        continue;
+      }
+
+      int value = std::stoi(pos);
       mazeArray[i][j] = value;
-      std::cout << "THE VALUE OF MAZE ARRAY[" << i << "][" << j << "] = " << value << std::endl;
+
+      if (testing == true) 
+      { 
+      std::cout << "THE VALUE OF COUNT : " << count << std::endl; 
+      std::cout << "THE VALUE OF POS : " << pos << std::endl;
+      std::cout << "THE VALUE OF VALUE : " << value << std::endl; 
+      std::cout << "THE VALUE OF MAZE ARRAY[" << i << "][" << j << "] = " << value << "\n" << std::endl;
+      }
+
+      count++;
     }
   }
 
