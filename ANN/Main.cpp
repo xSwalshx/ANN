@@ -8,79 +8,133 @@
 #include <string>
 #include <vector>
 
+#include <streambuf>
+#include <algorithm>
+#include <iterator>
+#include <cerrno>
+
 //FUNCTION DECLARATIONS
 std::string openFile(HWND hwnd);
 
+//PUBLIC VAR TO ENABLE TESTING FEATURES
+bool testing = false;
+
 int main()
 {
-
-  std::cout << "Choose a file to open" << std::endl;
-
-	//LOAD THE FILE PASSED IN AS A STRING FROM THE USER
-	std::string mazeFileLoc = openFile(0);
-	
-  std::cout << "Chosen File Location : " << mazeFileLoc.c_str() << "\n";
-  
-	//OPEN THE FILE IN BINARY
-  std::fstream mazeFile(mazeFileLoc, std::ios::in | std::ios::binary);
-
-  if (mazeFile.is_open())
+  //ARE YOU WANTING TO TEST THE CODE
+  std::cout << "//---------------------------------------------------//" << std::endl;
+  std::cout << "      ARE YOU WANTING TO SHOW TESTING STATISTICS?      " << std::endl;
+  std::cout << "//---------------------------------------------------//" << std::endl;
+  std::cout << "            ENTER 'Y' for yes OR 'N' for no            " << std::endl;
+  char decision;
+  std::cout << "                     DECISION : ";
+  std::cin >> decision;
+  switch (decision)
   {
-	  //STORE THE FIRST CHARACTER AS AN CHAR VALUE
-    char test = mazeFile.get();
-    std::cout << "First Character is : " << test << std::endl;
-    
-    //PUT THE CHAR VALUE IN A STRING
-    std::string strTest;
-    strTest.insert(strTest.begin(), test);
-    std::cout << "String First Character is : " << strTest << std::endl;
-
-    //USE STOI TO GET THE INT VALUE OF STRING
-    int testIntVal = std::stoi(strTest);
-    std::cout << "Int Value of first character is : " << testIntVal << std::endl;
-
-    mazeFile.close();
+  case 'Y':
+    std::cout << "       YOUR ARE NOW VIEWING TESTING STATISTICS         " << std::endl;
+    std::cout << "//---------------------------------------------------//\n" << std::endl;
+    testing = true;
+    break;
+  case 'y':
+    std::cout << "       YOUR ARE NOW VIEWING TESTING STATISTICS         " << std::endl;
+    std::cout << "//---------------------------------------------------//\n" << std::endl;
+    testing = true;
+    break;
+  case 'N':
+    std::cout << "         YOUR WILL NOT SEE TESTING STATISTICS          " << std::endl;
+    std::cout << "//---------------------------------------------------//\n" << std::endl;
+    testing = false;
+    break;
+  case 'n':
+    std::cout << "         YOUR WILL NOT SEE TESTING STATISTICS          " << std::endl;
+    std::cout << "//---------------------------------------------------//\n" << std::endl;
+    testing = false;
+    break;
+  default:
+    std::cout << "INVALID SELECTION : PLEASE TRY AGAIN!" << std::endl;
+    break;
   }
 
-	//IF STATEMENTS THAT CHECK WHICH FILE ENCODING TYPE HAS BEEN USED FOR THE TEXT FILE 
-	//CHECK FOR UTF-16
-	//ELSE
-	//OPEN AS UTF-8 & ANSI
+  //CHOOSE A MAZE FILE TO OPEN
+  std::cout << "Choose a file to open" << std::endl;
+  std::string mazeFileLoc = openFile(0); //LOAD THE FILE PASSED IN AS A STRING FROM THE USER
+  std::cout << "Chosen File Location : " << mazeFileLoc.c_str() << "\n"; //PRINT THE CHOSEN FILE LOCATION TO CONSOLE
+  
+  //------------------------------------------------------------------------------------------------------------------------//
+  //OPEN THE FILE IN BINARY
+  std::ifstream mazeFile(mazeFileLoc, std::ios::in | std::ios::binary);
+  
+  //READ THE FILE AND STORE IT IN A STRING
+  /* http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html */
+  std::string contents;
+  if (mazeFile)
+  {
+    mazeFile.seekg(0, std::ios::end);
+    contents.reserve(mazeFile.tellg());
+    mazeFile.seekg(0, std::ios::beg);
+    std::copy((std::istreambuf_iterator<char>(mazeFile)), std::istreambuf_iterator<char>(), std::back_inserter(contents));
+    mazeFile.close();
+  }
+  else 
+  { 
+    std::cout << "Unable to open file at memeory location : " << mazeFileLoc << std::endl;
+  }
 
-	/*
-	//OPEN AND READ THE MAZE FILE
-	if (mazeFile.is_open())
-	{
-	  while (getline(mazeFile, str_Maze))
-	  {
-		std::cout << str_Maze << '\n' << std::endl;
+  if (testing == true) { std::cout << "Contents of the file : " << contents << "\n" << std::endl; }
+  //------------------------------------------------------------------------------------------------------------------------//
+  //OPEN THE FILE AND STORE THE CONTENT IN A SRING AND GET X AND Y VALUES
+  std::string line;
+  std::string strX;
+  std::string strY;
+  const int maxX = 101; //THE MAX SIZE THE MAZE CAN GO TO IS 100 x 100
+  const int maxY = 101;
+  int x; //INPUT VALUE OF X FROM MAZE
+  int y; //INPUT VALUE OF Y FROM MAZE
 
-		//FINE THE NUMBER OF COLUMNS AND ROWS
-		std::string str_Columns = str_Maze.substr(0, 1);
-		const int columns = std::stoi(str_Columns, nullptr, 0);
+  std::ifstream maze(mazeFileLoc);
 
-		std::string str_Rows = str_Maze.substr(1, 2);
-		const int rows = std::stoi(str_Rows, nullptr, 0);
+  if (maze.is_open())
+  {
+    while (std::getline(maze, line))
+    {
+      //GET THE X VALUE
+      strX = line.substr(0, 1);
+      if (testing == true) { std::cout << "String Value of X : " << strX << std::endl; }
+      x = std::stoi(strX, 0);
+      if (testing == true) { std::cout << "Int value of X : " << x << std::endl; }
+      
+      //GET THE Y VALUE
+      strY = line.substr(1, 2);
+      if (testing == true) { std::cout << "String Value of Y : " << strX << std::endl; }
+      y = std::stoi(strY, 0);
+      if (testing == true) { std::cout << "Int value of Y : " << y << std::endl; }
+    }
+    maze.close();
+  }
+  else 
+  {
+    std::cout << "Unable to open file at memeory location : " << mazeFileLoc << std::endl;
+  }
+  //------------------------------------------------------------------------------------------------------------------------//
+  //CREATE A 2D ARRAY BASED OFF THE FILE MAZE
+  int mazeArray[maxX][maxY];
 
-		//IMPUT THE VALUES INTO A 2D ARRAY
-		std::cout << "Number of Columns : " << columns << std::endl;
-		std::cout << "Number of Rows : " << rows << std::endl;
+  int count = 3; //START AT THE FIRST PART OF THE ACTUAL MAZE
 
-		std::vector < std::vector <int> > mazeVector;
-		mazeVector.resize(rows, std::vector<int>(columns, 0));
-
-
-
-		//int myArray[columns][rows];
-
-	  }
-	  mazeFile.close();
-	}
-	else
-	{
-	  std::cout << "Unable to open file";
-	}
-	*/
+  //NESTED FOR LOOP TO GO THROUGHT THE MAZE AND PUT IT IN THE 2D ARRAY
+  for (int i = 0; i <= x; i++)
+  {
+    count += 1;
+    std::cout << "//--------------------------------------//" << std::endl;
+    for (int j = 0; j <= y; j++)
+    {
+      std::string pos = line.substr(count, count += 1);
+      int value = std::stoi(pos, 0);
+      mazeArray[i][j] = value;
+      std::cout << "THE VALUE OF MAZE ARRAY[" << i << "][" << j << "] = " << value << std::endl;
+    }
+  }
 
 	system("Pause");
 	return 0;
@@ -90,32 +144,13 @@ int main()
 std::string openFile(HWND hwnd)
 {
   /* https://stackoverflow.com/questions/38774248/how-to-save-ofn-lpstrfile-to-string-properly */
-	std::string mazeFileLocation(MAX_PATH, '\0');
+  std::string mazeFileLocation(MAX_PATH, '\0');
 
   OPENFILENAME ofn = { sizeof(OPENFILENAME) };
   ofn.hwndOwner = hwnd;
   ofn.lpstrFilter = "Text\0*.TXT\0"; //FILTER WHAT FILES ARE WANTED
   ofn.lpstrFile = &mazeFileLocation[0];
   ofn.nMaxFile = MAX_PATH;
-
-  /*
-  OPENFILENAME ofn;
-
-  // another memory buffer to contain the file name
-  char szFile[100];
-
-	// OPEN A FILE NAME : /* https://www.daniweb.com/programming/software-development/code/217307/a-simple-getopenfilename-example
-	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = hwnd;
-	ofn.lpstrFile = szFile;
-	ofn.lpstrFile[0] = '\0';
-	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = "Text\0*.TXT\0"; //FILTER WHAT FILES ARE WANTED
-	ofn.nFilterIndex = 1;
-	ofn.lpstrFileTitle = NULL;
-	ofn.nMaxFileTitle = 0;
-	ofn.lpstrInitialDir = NULL;
-	*/
 
   ofn.Flags = OFN_FILEMUSTEXIST; //CHECK IF THE FILE EXISTS
 
