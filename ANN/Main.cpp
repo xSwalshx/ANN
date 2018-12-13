@@ -16,8 +16,11 @@
 const int maxX = 101; //THE MAX SIZE THE MAZE CAN GO TO IS 100 x 100
 const int maxY = 101;
 int mazeArray[maxY][maxX]; // mazeArray[y][x]
-int posX; //POSITION OF THE PLAYER
-int posY;
+int posX; //POSITION OF THE PLAYER (Global Var)
+int posY; //POSITION OF THE PLAYER (Global Var)
+int finishX; //FINISH POSITION THAT THE PLAYER NEEDS TO GET TO (Global Var)
+int finishY; //FINISH POSITION THAT THE PLAYER NEEDS TO GET TO (Global Var)
+std::vector <double> chromosomeListFitness; //VECTOR OF FITNESS(S) THAT RELATE TO THE CHROMOSOMELIST
 time_t start;
 
 //PUBLIC VAR TO ENABLE TESTING FEATURES
@@ -27,12 +30,13 @@ bool testing = false;
 std::string openFile(HWND hwnd);
 void moveFunction(int mazeArray[maxY][maxX], int &posX, int &posY, int x, int y, std::string move);
 void solutionFound(std::vector <std::string> chromosomeList, int cN, int count, int generation, double mutationChance);
+double fitnessFunction(int posX, int posY, int finishX, int finishY);
 
 //MAIN FUNCTION
 int main()
 {
   //ARE YOU WANTING TO TEST THE CODE
-  
+
   std::cout << "//---------------------------------------------------//" << std::endl;
   std::cout << "      ARE YOU WANTING TO SHOW TESTING STATISTICS?      " << std::endl;
   std::cout << "//---------------------------------------------------//" << std::endl;
@@ -74,7 +78,7 @@ int main()
   std::string mazeFileLoc = openFile(0); //LOAD THE FILE PASSED IN AS A STRING FROM THE USER
   std::cout << "Chosen File Location : " << mazeFileLoc.c_str() << "\n" << std::endl; //PRINT THE CHOSEN FILE LOCATION TO CONSOLE
   std::cout << "//---------------------------------------------------//\n" << std::endl;
-  
+
   //------------------------------------------------------------------------------------------------------------------------//
   //OPEN THE FILE AND STORE THE CONTENT IN A SRING AND GET X AND Y VALUES
   std::string line;
@@ -97,7 +101,7 @@ int main()
       if (testing == true) { std::cout << "String Value of X : " << strX << std::endl; }
       x = std::stoi(strX, 0);
       if (testing == true) { std::cout << "Int value of X : " << x << std::endl; }
-      
+
       //GET THE Y VALUE
       strY = line.substr(1, 2);
       if (testing == true) { std::cout << "String Value of Y : " << strY << std::endl; }
@@ -106,7 +110,7 @@ int main()
     }
     maze.close();
   }
-  else 
+  else
   {
     std::cout << "Unable to open file at memeory location : " << mazeFileLoc << std::endl;
   }
@@ -122,12 +126,12 @@ int main()
   {
     for (int j = 0; j < x; j++) //FOR LOOP TO GO THROUGH THE X AXIS
     {
-      std::string pos = line.substr(count,1);
+      std::string pos = line.substr(count, 1);
 
       //IF THERE IS A SPACE THEN SKIP IT AND ADD TO COUNT
       /* https://en.cppreference.com/w/cpp/algorithm/remove */
       std::remove_if(pos.begin(), pos.end(), isspace);
-      if (pos == " ") 
+      if (pos == " ")
       {
         count++; //INCREMENT COUNT SO WE DON'T STAY ON SPACE AND MOVE TO NEXT PART OF STRING
         j--; //SO WE DON'T MISS A MEMBER IN THE ARRAY GO BACK BY 1 ON j
@@ -152,13 +156,13 @@ int main()
 
     for (int j = 0; j < x; j++) //COLUMNS
     {
-      if (testing == true) 
-      { 
-        std::cout << "MAZE ARRAY[" << i << "][" << j << "] = " << mazeArray[i][j] << "\t"; 
+      if (testing == true)
+      {
+        std::cout << "MAZE ARRAY[" << i << "][" << j << "] = " << mazeArray[i][j] << "\t";
       }
-      else 
-      { 
-        std::cout << "\t" << mazeArray[i][j]; 
+      else
+      {
+        std::cout << "\t" << mazeArray[i][j];
       }
     }
   }
@@ -200,7 +204,7 @@ int main()
       }
     }
     //PUT THE FILLED STRING AT THE BACK OF THE VECTOR
-    chromosomeList.emplace_back(member);  
+    chromosomeList.emplace_back(member);
   }
 
   //FOR LOOP TO GO THROUGH ALL THE OF MEMBERS IN THE VECTOR
@@ -219,10 +223,9 @@ int main()
   //CREATE THE PLAYER
   int startX;
   int startY;
-  int finishX;
-  int finishY;
   bool spFound = false;
   bool fpFound = false;
+  double totalFitness = 0;
 
   //FIND THE START AND FINISH POINT
   for (int i = 0; i < y; i++)
@@ -237,7 +240,7 @@ int main()
         startY = i;
         spFound = true;
       }
-      
+
       //FIND THE FINISH X AND Y
       if (mazeArray[i][j] == 3)
       {
@@ -261,17 +264,22 @@ int main()
   posX = startX;
   posY = startY;
 
+  //---------------------------------------------------------------------------------------------------//
   //GO THROUGH EACH CHROMOSOME IN THE CHROMOSOME LIST
   std::cout << "\n";
   for (int count = 0; count < chromosomeList.size(); count++)
   {
     std::string strChromosome;
     strChromosome = chromosomeList[count]; //TEMP STORE CHROMOSOME AS A STRING
-    if (testing == true) { std::cout << "Chromosome in use = " << strChromosome << std::endl; }
-
+    if (testing == true)
+    {
+      std::cout << "//---------------------------------------------------//\n" << std::endl;
+      std::cout << "Chromosome in use = " << strChromosome << std::endl;
+    }
+    
+    //GO THROUGH EACH MOVE IN THE CURRENT CHROMOSOME
     int movesCount = 0;
-
-    for (int i = 0; i < cN; i+=2)
+    for (int i = 0; i < cN; i += 2)
     {
       //TEMP STORE THE MOVE AS A STRING
       movesCount++;
@@ -281,18 +289,40 @@ int main()
 
       //CALL THE MOVE FUNCTION (for each move within the chromosome)
       moveFunction(mazeArray, posX, posY, x, y, strMove);
-
-      //CALCULATE THE FITNESS OF THE CHROMOSOME (store this as a double in a 1d array)
-
-
     }
+
+    //CALCULATE THE FITNESS OF THE CHROMOSOME (store this as a double in a 1d array)
+    double fitness = fitnessFunction(posX, posY, finishX, finishY);
+    totalFitness += fitness;
+    chromosomeListFitness.emplace_back(fitness);
 
     //RESET THE POSITON X AND Y TO STARTING POINTS ONCE THE MOVES FOR CHROMOSOME HAS BEEN COMPLETE
     posX = startX;
     posY = startY;
+  }
+  //---------------------------------------------------------------------------------------------------//
 
-    if (testing == true) { std::cout << "//---------------------------------------------------//" << std::endl; }
 
+  //PRINT THE FITNESS OUT FOR THE CHROMOSOMES
+  if (testing == true)
+  {
+    std::cout << "//---------------------------------------------------//\n" << std::endl;
+    for (int i = 0; i < chromosomeListFitness.size(); i++)
+    {
+      std::cout << "CHROMOSOME [" << i << "] FITNESS = " << chromosomeListFitness[i] << std::endl;
+    }
+    std::cout << "\n//---------------------------------------------------//" << std::endl;
+  }
+  
+  //CALCULATE THE INDIVIDUAL FITNESS PERCENTAGE
+  for (int i = 0; i < chromosomeListFitness.size(); i++)
+  {
+    double fitness;
+    double individualFitness;
+    fitness = chromosomeListFitness[i];
+    individualFitness = fitness / totalFitness;
+    double percentage = individualFitness * 100;
+    if (testing == true) { std::cout << "Chromosome[" << i << "] Fitness Percentage = " << percentage << "%" << std::endl; }
   }
 
   std::cout << "\n" << std::endl;
@@ -337,7 +367,7 @@ void moveFunction(int mazeArray[maxY][maxX], int &posX, int &posY, int x, int y,
     }
     else if (posY == 0)
     {
-      std::cout << "Unable to move up as it is out of bounds" << std::endl;
+      if (testing == true) { std::cout << "Unable to move up as it is out of bounds" << std::endl; }
       return;
     }
   }
@@ -346,7 +376,8 @@ void moveFunction(int mazeArray[maxY][maxX], int &posX, int &posY, int x, int y,
   else if (move == "10")
   {
     //IF THE PLAYER IS NOT ON THE EDGE OF THE MAZE
-    if (posY < y)
+    int yEdge = (y -= 1);
+    if (posY < yEdge)
     {
       //MOVE THE POSITION OF THE PLAYER
       posY += 1;
@@ -368,10 +399,14 @@ void moveFunction(int mazeArray[maxY][maxX], int &posX, int &posY, int x, int y,
         if (testing == true) { std::cout << "\tUNABLE TO COMPLETE MOVE DOWN AS THERE IS A WALL" << std::endl; }
         return;
       }
+      else if (mazeChunk == 3)
+      {
+        //solutionFound(chromosomeList, cN, count, generation, mutationChance); //implement into moveFunc once the generations and that have been done.
+      }
     }
     else if (posY == y)
     {
-      std::cout << "Unable to move down as it is out of bounds" << std::endl;
+      if (testing == true) { std::cout << "Unable to move down as it is out of bounds" << std::endl; }
       return;
     }
   }
@@ -402,10 +437,14 @@ void moveFunction(int mazeArray[maxY][maxX], int &posX, int &posY, int x, int y,
         if (testing == true) { std::cout << "\tUNABLE TO COMPLETE MOVE LEFT AS THERE IS A WALL" << std::endl; }
         return;
       }
+      else if (mazeChunk == 3)
+      {
+        //solutionFound(chromosomeList, cN, count, generation, mutationChance); //implement into moveFunc once the generations and that have been done.
+      }
     }
     else if (posX == 0)
     {
-      std::cout << "Unable to move left as it is out of bounds" << std::endl;
+      if (testing == true) { std::cout << "Unable to move left as it is out of bounds" << std::endl; }
       return;
     }
   }
@@ -413,9 +452,9 @@ void moveFunction(int mazeArray[maxY][maxX], int &posX, int &posY, int x, int y,
   //RIGHT
   else if (move == "01")
   {
-
     //IF THE PLAYER IS NOT ON THE EDGE OF THE MAZE
-    if (posX < x)
+    int xEdge = (x -= 1);
+    if (posX < xEdge)
     {
       //MOVE THE POSITION OF THE PLAYER
       posX += 1;
@@ -437,10 +476,14 @@ void moveFunction(int mazeArray[maxY][maxX], int &posX, int &posY, int x, int y,
         if (testing == true) { std::cout << "\tUNABLE TO COMPLETE MOVE RIGHT AS THERE IS A WALL" << std::endl; }
         return;
       }
+      else if (mazeChunk == 3)
+      {
+        //solutionFound(chromosomeList, cN, count, generation, mutationChance); //implement into moveFunc once the generations and that have been done.
+      }
     }
     else if (posX == x)
     {
-      std::cout << "Unable to move right as it is out of bounds" << std::endl;
+      if (testing == true) { std::cout << "Unable to move right as it is out of bounds" << std::endl; }
       return;
     }
   }
@@ -466,8 +509,18 @@ void solutionFound(std::vector <std::string> chromosomeList, int cN, int count, 
   return;
 }
 
+//FITNESS FUNCTION
+double fitnessFunction(int posX, int posY, int finishX, int finishY)
+{
+  double fitness;
 
+  double dX = abs(posX - finishX);
+  double dY = abs(posY - finishY);
+  double dXY = (dX + dY);
+  fitness = (1 / (dXY + 1));
 
+  return fitness;
+}
 
 //CHOOSE A FILE TO OPEN AND RETURN LOCATION AS A STRING
 std::string openFile(HWND hwnd)
