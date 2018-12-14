@@ -30,6 +30,7 @@
     <ProjectGuid>{A5974497-2B7D-4AC1-959E-9F8D37558496}</ProjectGuid>
     <RootNamespace>ANN</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <ProjectName>GA</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
